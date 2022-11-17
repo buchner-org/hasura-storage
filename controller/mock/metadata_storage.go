@@ -81,11 +81,12 @@ func (mr *MockMetadataStorageMockRecorder) GetFileByID(arg0, arg1, arg2 interfac
 }
 
 // InitializeFile mocks base method.
-func (m *MockMetadataStorage) InitializeFile(arg0 context.Context, arg1, arg2 string, arg3 int64, arg4, arg5 string, arg6 http.Header) *controller.APIError {
+func (m *MockMetadataStorage) InitializeFile(arg0 context.Context, arg1, arg2 string, arg3 int64, arg4, arg5 string, arg6 http.Header) (*controller.FileMetadata, *controller.APIError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InitializeFile", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
-	ret0, _ := ret[0].(*controller.APIError)
-	return ret0
+	ret0, _ := ret[0].(*controller.FileMetadata)
+	ret1, _ := ret[1].(*controller.APIError)
+	return ret0, ret1
 }
 
 // InitializeFile indicates an expected call of InitializeFile.

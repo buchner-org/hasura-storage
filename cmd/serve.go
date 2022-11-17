@@ -37,6 +37,7 @@ const (
 	s3RootFolderFlag             = "s3-root-folder"
 	postgresMigrationsFlag       = "postgres-migrations"
 	postgresMigrationsSourceFlag = "postgres-migrations-source"
+	postgresSchemaSourceFlag     = "postgres-schema-source"
 	fastlyServiceFlag            = "fastly-service"
 	fastlyKeyFlag                = "fastly-key"
 )
@@ -136,6 +137,7 @@ func getContentStorage(
 func applymigrations(
 	postgresMigrations bool,
 	postgresSource string,
+	postgresShema string,
 	hasuraMetadata bool,
 	hasuraEndpoint string,
 	hasuraSecret string,
@@ -147,7 +149,7 @@ func applymigrations(
 			os.Exit(1)
 		}
 		logger.Info("applying postgres migrations")
-		if err := migrations.ApplyPostgresMigration(postgresSource); err != nil {
+		if err := migrations.ApplyPostgresMigration(postgresSource, postgresShema); err != nil {
 			logger.Errorf("problem applying postgres migrations: %s", err.Error())
 			os.Exit(1)
 		}
@@ -263,6 +265,7 @@ var serveCmd = &cobra.Command{
 		applymigrations(
 			viper.GetBool(postgresMigrationsFlag),
 			viper.GetString(postgresMigrationsSourceFlag),
+			viper.GetString(postgresSchemaSourceFlag),
 			viper.GetBool(hasuraMetadataFlag),
 			viper.GetString(hasuraEndpointFlag),
 			viper.GetString(hasuraAdminSecretFlag),

@@ -16,13 +16,18 @@ const schemaName = "storage"
 //go:embed postgres/*.sql
 var postgresMigrations embed.FS
 
-func ApplyPostgresMigration(postgresURL string) error {
+func ApplyPostgresMigration(postgresURL, schema string) error {
 	db, err := sql.Open("postgres", postgresURL)
 	if err != nil {
 		return fmt.Errorf("problem connecting to postgres: %w", err)
 	}
 
-	driver, err := postgres.WithInstance(db, &postgres.Config{SchemaName: schemaName})
+	if schema == "" {
+		// Fallback value
+		schema = schemaName
+	}
+
+	driver, err := postgres.WithInstance(db, &postgres.Config{SchemaName: schema})
 	if err != nil {
 		return fmt.Errorf("problem creating postgres driver: %w", err)
 	}

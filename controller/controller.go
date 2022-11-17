@@ -32,16 +32,21 @@ type BucketMetadata struct {
 }
 
 type FileMetadata struct {
-	ID               string `json:"id"`
-	Name             string `json:"name"`
-	Size             int64  `json:"size"`
-	BucketID         string `json:"bucketId"`
-	ETag             string `json:"etag"`
-	CreatedAt        string `json:"createdAt"`
-	UpdatedAt        string `json:"updatedAt"`
-	IsUploaded       bool   `json:"isUploaded"`
-	MimeType         string `json:"mimeType"`
-	UploadedByUserID string `json:"uploadedByUserId"`
+	ID               string `json:"id,omitempty"`
+	Name             string `json:"name,omitempty"`
+	Size             int64  `json:"size,omitempty"`
+	BucketID         string `json:"bucketId,omitempty"`
+	ETag             string `json:"etag,omitempty"`
+	CreatedAt        string `json:"createdAt,omitempty"`
+	UpdatedAt        string `json:"updatedAt,omitempty"`
+	IsUploaded       bool   `json:"isUploaded,omitempty"`
+	MimeType         string `json:"mimeType,omitempty"`
+	UploadedByUserID string `json:"uploadedByUserId,omitempty"`
+	TenantID         string `json:"tenantID,omitempty"`
+	TenantInstanceID string `json:"tenantInstanceID,omitempty"`
+	ObjectID         string `json:"objectID,omitempty"`
+	CreatedUser      string `json:"createdUser,omitempty"`
+	UpdatedUser      string `json:"updatedUser,omitempty"`
 }
 
 type FileMetadataWithBucket struct {
@@ -57,7 +62,7 @@ type MetadataStorage interface {
 		ctx context.Context,
 		id, name string, size int64, bucketID, mimeType string,
 		headers http.Header,
-	) *APIError
+	) (*FileMetadata, *APIError)
 	PopulateMetadata(
 		ctx context.Context,
 		id, name string, size int64, bucketID, etag string, IsUploaded bool, mimeType string,

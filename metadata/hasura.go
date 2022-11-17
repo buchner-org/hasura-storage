@@ -9,6 +9,10 @@ import (
 	"github.com/nhost/hasura-storage/controller"
 )
 
+var (
+	_ controller.MetadataStorage = (*Hasura)(nil)
+)
+
 type (
 	uuid string
 )
@@ -179,10 +183,11 @@ func (h *Hasura) InitializeFile(
 	ctx context.Context,
 	fileID, name string, size int64, bucketID, mimeType string,
 	headers http.Header,
-) *controller.APIError {
+) (*controller.FileMetadata, *controller.APIError) {
 	var result struct {
 		InsertFiles struct {
-			AffectedRows int `graphql:"affected_rows"`
+			AffectedRows int                      `graphql:"affected_rows"`
+			Returning    *controller.FileMetadata `graphql:"returning"`
 		} `graphql:"insertFiles"`
 	}
 
@@ -195,17 +200,39 @@ func (h *Hasura) InitializeFile(
 	}
 
 	client := h.client.WithRequestModifier(h.authorizer(headers))
+	// TODO DP get metadata header tenant / instance / user
+	// TODO DP add addittional primary identifier for relation to base object - Contact, Documentation, etc.
 	if err := client.Exec(
 		ctx,
-		`mutation InitializeFile($id: uuid!, $name: String!, $bucketId: String!, $mimeType: String!, $size: Int!) {insertFiles(objects: {id: $id, bucketId: $bucketId, mimeType: $mimeType, name: $name, size: $size}) {affected_rows}}`, //nolint: lll
+		`mutation InitializeFile($id: uuid!, $name: String!, $bucketId: String!, $mimeType: String!, $size: Int!) {
+			insertFiles(objects: {id: $id, bucketId: $bucketId, mimeType: $mimeType, name: $name, size: $size}) {
+				affected_rows
+				returning {
+					id
+					name
+					size
+					bucketId
+					etag
+					createdAt
+					updatedAt
+					isUploaded
+					mimeType
+					uploadedByUserId
+					tenantID
+					tenantInstanceID
+					objectID
+					createdUser
+					updatedUser
+				}
+			}
+		}`, //nolint: lll
 		&result,
 		variables,
 	); err != nil {
 		aerr := parseGraphqlError(err)
-		return aerr.ExtendError("problem initializing file metadata")
+		return nil, aerr.ExtendError("problem initializing file metadata")
 	}
-
-	return nil
+	return result.InsertFiles.Returning, nil
 }
 
 func (h *Hasura) PopulateMetadata(
@@ -214,6 +241,7 @@ func (h *Hasura) PopulateMetadata(
 	headers http.Header,
 ) (controller.FileMetadata, *controller.APIError) {
 	var query struct {
+		// TODO DP add additional metadata (tenant, instance, user, (thumbnail), reference to contact/documentation etc.
 		UpdateStorageFile FileMetadata `graphql:"updateFile(pk_columns: {id: $id}, _set: {bucketId: $bucketId, etag: $etag, isUploaded: $isUploaded, mimeType: $mimeType, name: $name, size: $size})"` //nolint
 	}
 

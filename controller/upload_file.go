@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"path"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
@@ -82,15 +83,16 @@ func (ctrl *Controller) upload(
 		}
 		defer fileContent.Close()
 
-		apiErr := ctrl.metadataStorage.InitializeFile(
+		fileMeta, apiErr := ctrl.metadataStorage.InitializeFile(
 			ctx,
 			file.ID, file.Name, file.header.Size, bucket.ID, contentType,
 			request.headers)
 		if apiErr != nil {
 			return filesMetadata, apiErr
 		}
-
-		etag, apiErr := ctrl.contentStorage.PutFile(fileContent, file.ID, contentType)
+		// create path from metadata
+		p := path.Join(fileMeta.TenantID, fileMeta.TenantInstanceID, fileMeta.BucketID, fileMeta.ObjectID, fileMeta.ID)
+		etag, apiErr := ctrl.contentStorage.PutFile(fileContent, p, contentType) // TODO DP path.Join(tenant/bucket/primary_id/id)
 		if apiErr != nil {
 			_ = ctrl.metadataStorage.DeleteFileByID(
 				ctx,
